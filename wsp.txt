@@ -1,0 +1,76 @@
+-- GoalMachine67 Private Hitbox Extender - Main
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local Enabled = false
+local Size = 12
+local Visualizer = nil
+local oldCreate = nil
+
+local function HookHitbox()
+    local mod = ReplicatedStorage.Modules and require(ReplicatedStorage.Modules.HitboxHandler)
+    if mod and not oldCreate then
+        oldCreate = mod.Create
+        mod.Create = function(params)
+            if Enabled then
+                params.size = Vector3.new(Size, Size, Size)
+            end
+            return oldCreate(params)
+        end
+    end
+end
+
+local function UpdateViz()
+    local ball = Workspace:FindFirstChild("Temp") and Workspace.Temp:FindFirstChild("Ball")
+    if not Enabled or not ball then
+        if Visualizer then Visualizer:Destroy() Visualizer = nil end
+        return
+    end
+    if not Visualizer then
+        Visualizer = Instance.new("Part", Workspace)
+        Visualizer.Anchored = true
+        Visualizer.CanCollide = false
+        Visualizer.Transparency = 0.6
+        Visualizer.Material = Enum.Material.ForceField
+        Visualizer.Color = Color3.fromRGB(0, 200, 255)
+    end
+    Visualizer.Size = Vector3.new(Size, Size, Size)
+    Visualizer.CFrame = ball.CFrame
+end
+
+-- Minimal GUI
+local gui = Instance.new("ScreenGui", LocalPlayer.PlayerGui)
+gui.Name = "GM67_Private"
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 300, 0, 170)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(15,15,15)
+frame.Active = true frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,12)
+Instance.new("UIStroke", frame).Color = Color3.fromRGB(0,170,255)
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1,0,0,40) title.Text = "GM67 Private Hitbox" title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(0,200,255) title.Font = Enum.Font.SourceSansBold title.TextSize = 20
+
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(0,260,0,45) toggle.Position = UDim2.new(0.5,-130,0,50)
+toggle.Text = "Hitbox: OFF" toggle.BackgroundColor3 = Color3.fromRGB(40,40,40)
+Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,10)
+
+toggle.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+    toggle.Text = "Hitbox: "..(Enabled and "ON" or "OFF")
+    toggle.BackgroundColor3 = Enabled and Color3.fromRGB(0,140,0) or Color3.fromRGB(40,40,40)
+end)
+
+-- Slider basit hali (isteğe göre genişletebilirsin)
+local sizeLabel = Instance.new("TextLabel", frame)
+sizeLabel.Size = UDim2.new(1,-20,0,25) sizeLabel.Position = UDim2.new(0,10,0,105)
+sizeLabel.BackgroundTransparency = 1 sizeLabel.Text = "Size: 12" sizeLabel.TextColor3 = Color3.fromRGB(220,220,220)
+
+HookHitbox()
+RunService.RenderStepped:Connect(UpdateViz)
